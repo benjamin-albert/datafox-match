@@ -1,0 +1,21 @@
+{
+  "name": "datafox-assignment",
+  "version": "0.0.1",
+  "description": "DataFox Homework assignment",
+  "main": "index.js",
+  "scripts": {
+    "test": "tape \"test\\*.js\""
+  },
+  "keywords": [
+    "DataFox",
+    "homework",
+    "assignment",
+    "matching"
+  ],
+  "author": "Benjamin Albert",
+  "license": "MIT",
+  "dependencies": {
+    "JSONStream": "^1.2.1",
+    "fast-csv": "^2.3.0"
+  }
+}
