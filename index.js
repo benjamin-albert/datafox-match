@@ -3,49 +3,49 @@ const fs = require('fs');
 const JSONStream = require('JSONStream');
 const parse = require('./lib/parse');
 
-var csvFile = fs.createReadStream('crm.csv');
-parse(csvFile).then(tokenizeCompanies);
+const csvFile = fs.createReadStream('crm.csv');
+parse(csvFile)
+  .then(tokenizeCompanies)
+  .catch( error => console.error(error) );
 
-function normalize(name) {
-  return name.toLowerCase().replace(/[^a-z0-9 ]/gi, '');
-}
-
-function ambiguity(records) {
-  return Object.keys(records).length - 1;
-}
 
 function tokenizeCompanies(companies) {
   // Maps a token to a map of databade records.
-  var tokenMap = {};
+  const tokenMap = {};
 
+  // Populate the map with relevant tokens.
   companies.forEach( company => {
     normalize(company).split(' ').forEach( token => {
       tokenMap[token] = tokenMap[token] || {};
     });
   });
 
-  var dbPath = require.resolve('./db.json');
-  var db = fs.createReadStream(dbPath);
+  const dbPath = require.resolve('./db.json');
+  const db = fs.createReadStream(dbPath);
 
+  // Use a JSON stream to avoid buffering the entire
+  // database into memory.
   db.pipe(JSONStream.parse('*'))
     .on('data', onRecord)
     .on('end', removeAmbiguous);
 
+  // Tokenize all of the possible names a company
+  // has in the database.
   function onRecord(record) {
+    tokenize(record.name);
+    record.corporate_names.forEach(tokenize);
+    record.fka_names.forEach(tokenize);
+
+    function tokenize(company) {
+      normalize(company).split(' ').forEach(addToken);
+    }
+
     function addToken(token) {
       var obj = tokenMap[token];
       if (obj) {
         obj[record.id] = record;
       }
     }
-
-    function tokenize(company) {
-      normalize(company).split(' ').forEach(addToken);
-    }
-
-    tokenize(record.name);
-    record.corporate_names.forEach(tokenize);
-    record.fka_names.forEach(tokenize);
   }
 
   function removeAmbiguous() {
@@ -65,8 +65,8 @@ function tokenizeCompanies(companies) {
   function match(specificTokens) {
     var matches = {};
     companies.forEach( company => {
-     normalize(company).split(' ').forEach( word => {
-       var match = specificTokens[word];
+     normalize(company).split(' ').forEach( token => {
+       var match = specificTokens[token];
        if (match) {
          matches[company] = match;
        }
@@ -85,4 +85,12 @@ function tokenizeCompanies(companies) {
     var time = end - start;
     console.log(`Execution time: ${time}ms`);
   }
+}
+
+function normalize(name) {
+  return name.toLowerCase().replace(/[^a-z0-9 ]/gi, '');
+}
+
+function ambiguity(records) {
+  return Object.keys(records).length - 1;
 }
