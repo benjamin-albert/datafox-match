@@ -9,22 +9,21 @@ function normalize(name) {
 }
 
 function tokenizeCompanies(companies) {
-  var words = {};
-  var recMap = {};
-  var matches = {};
+  var tokenMap = {};
 
   var db = require('./db.json');
 
   db.forEach(function(rec) {
-    var recWords = {};
+    var matches = {};
 
     function addToken(token) {
-      if (!recWords[token]) {
-        recWords[token] = 1;
+      if (!matches[token]) {
+        matches[token] = 1;
+        var obj = tokenMap[token] || (tokenMap[token] = {});
 
-        words[token] = (words[token] + 1) || 0;
-        recMap[token] = recMap[token] || [];
-        recMap[token].push(rec.id);
+        obj.ambiguity = (obj.ambiguity + 1) || 0;
+        obj.records = obj.records || [];
+        obj.records.push(rec.id);
       }
     }
 
@@ -35,21 +34,22 @@ function tokenizeCompanies(companies) {
     tokenize(rec.name);
     rec.corporate_names.forEach(tokenize);
     rec.fka_names.forEach(tokenize);
-
   } );
 
-  var uniqueWords = {};
-  for (var word in words) {
-   if (words[word] < 8) {
-     uniqueWords[word] = recMap[word];
-   }
+  var uniqueTokens = {};
+  for (var token in tokenMap) {
+    var obj = tokenMap[token];
+    if (obj.ambiguity < 8) {
+      uniqueTokens[token] = obj.records;
+    }
   }
 
-  companies.forEach( comp => {
-   comp.split(' ').forEach( word => {
-     var match = uniqueWords[normalize(word.toLowerCase())];
+  var matches = {};
+  companies.forEach( company => {
+   normalize(company).split(' ').forEach( word => {
+     var match = uniqueTokens[word];
      if (match) {
-       matches[comp] = match;
+       matches[company] = match;
      }
    });
   });
