@@ -1,7 +1,7 @@
 const start = new Date().getTime();
 const fs = require('fs');
 const JSONStream = require('JSONStream');
-const parse = require('./lib/parse');
+const parse = require('./parse');
 
 const csvFile = fs.createReadStream('crm.csv');
 parse(csvFile)
