@@ -4,16 +4,15 @@ const parse = require('./lib/parse');
 var csvFile = fs.createReadStream('crm.csv');
 parse(csvFile).then(tokenizeCompanies);
 
-var words = {};
-var recMap = {};
-var matches = {};
-var companies = [];
-
 function normalize(name) {
   return name.toLowerCase().replace(/[^a-z0-9 ]/gi, '');
 }
 
 function tokenizeCompanies(companies) {
+  var words = {};
+  var recMap = {};
+  var matches = {};
+
   var db = require('./db.json');
 
   db.forEach(function(rec) {
