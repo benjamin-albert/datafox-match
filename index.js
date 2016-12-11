@@ -79,7 +79,7 @@ function tokenizeCompanies(companies) {
   function printResults(matches) {
     console.log(matches);
     console.log('----------------');
-    console.log('Number of matches: ' + Object.keys(matches).length);
+    console.log(Object.keys(matches).length + ' out of ' + companies.length + ' companies found');
 
     var end = new Date().getTime();
     var time = end - start;
