@@ -1,7 +1,8 @@
-var createReadStream = require('fs').createReadStream;
-var csv = require('fast-csv');
+const fs = require('fs');
+const parse = require('./lib/parse');
 
-var stream = createReadStream('crm.csv');
+var csvFile = fs.createReadStream('crm.csv');
+parse(csvFile).then(tokenizeCompanies);
 
 var words = {};
 var recMap = {};
@@ -12,54 +13,48 @@ function normalize(name) {
   return name.toLowerCase().replace(/[^a-z0-9 ]/gi, '');
 }
 
-var csvStream = csv()
-    .on('data', function(data) {
-      companies.push(data[0]);
-    })
-    .on('end', function() {
-      var db = require('./db.json');
+function tokenizeCompanies(companies) {
+  var db = require('./db.json');
 
-      db.forEach(function(rec) {
-        var recWords = {};
+  db.forEach(function(rec) {
+    var recWords = {};
 
-        function addToken(token) {
-          if (!recWords[token]) {
-            recWords[token] = 1;
+    function addToken(token) {
+      if (!recWords[token]) {
+        recWords[token] = 1;
 
-            words[token] = (words[token] + 1) || 0;
-            recMap[token] = recMap[token] || [];
-            recMap[token].push(rec.id);
-          }
-        }
+        words[token] = (words[token] + 1) || 0;
+        recMap[token] = recMap[token] || [];
+        recMap[token].push(rec.id);
+      }
+    }
 
-        function tokenize(company) {
-          normalize(company).split(' ').forEach( addToken );
-        }
+    function tokenize(company) {
+      normalize(company).split(' ').forEach( addToken );
+    }
 
-        tokenize(rec.name);
-        rec.corporate_names.forEach(tokenize);
-        rec.fka_names.forEach(tokenize);
+    tokenize(rec.name);
+    rec.corporate_names.forEach(tokenize);
+    rec.fka_names.forEach(tokenize);
 
-     } );
+  } );
 
-     var uniqueWords = {};
-     for (var word in words) {
-       if (words[word] < 8) {
-         uniqueWords[word] = recMap[word];
-       }
+  var uniqueWords = {};
+  for (var word in words) {
+   if (words[word] < 8) {
+     uniqueWords[word] = recMap[word];
+   }
+  }
+
+  companies.forEach( comp => {
+   comp.split(' ').forEach( word => {
+     var match = uniqueWords[normalize(word.toLowerCase())];
+     if (match) {
+       matches[comp] = match;
      }
+   });
+  });
 
-     companies.forEach( comp => {
-       comp.split(' ').forEach( word => {
-         var match = uniqueWords[normalize(word.toLowerCase())];
-         if (match) {
-           matches[comp] = match;
-         }
-       });
-     });
-
-     console.log(matches);
-     console.log(Object.keys(matches).length);
-    });
-
-stream.pipe(csvStream);
+  console.log(matches);
+  console.log(Object.keys(matches).length);
+}
