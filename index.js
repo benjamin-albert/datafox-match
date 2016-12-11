@@ -9,7 +9,7 @@ var matches = {};
 var companies = [];
 
 function normalize(name) {
-  return name.trim().replace(/[^a-z0-9 ]/gi, '');
+  return name.toLowerCase().replace(/[^a-z0-9 ]/gi, '');
 }
 
 var csvStream = csv()
@@ -22,40 +22,23 @@ var csvStream = csv()
       db.forEach(function(rec) {
         var recWords = {};
 
-        rec.name.split(' ').forEach( word => {
-          var word = normalize(word.toLowerCase());
+        function addToken(token) {
+          if (!recWords[token]) {
+            recWords[token] = 1;
 
-          if (recWords[word])return;
-          recWords[word] = 1;
+            words[token] = (words[token] + 1) || 0;
+            recMap[token] = recMap[token] || [];
+            recMap[token].push(rec.id);
+          }
+        }
 
-          words[word] = (words[word] + 1) || 0;
-          recMap[word] = recMap[word] || [];
-          recMap[word].push(rec.id);
-        } );
+        function tokenize(company) {
+          normalize(company).split(' ').forEach( addToken );
+        }
 
-        rec.corporate_names.forEach(name => {
-          name.split(' ').forEach( word => {
-            var word = normalize(word.toLowerCase());
-            if (recWords[word])return;
-            recWords[word] = 1;
-
-            words[word] = (words[word] + 1) || 0;
-            recMap[word] = recMap[word] || [];
-            recMap[word].push(rec.id);
-          } );
-        });
-
-        rec.fka_names.forEach(name => {
-          name.split(' ').forEach( word => {
-            var word = normalize(word.toLowerCase());
-            if (recWords[word])return;
-            recWords[word] = 1;
-
-            words[word] = (words[word] + 1) || 0;
-            recMap[word] = recMap[word] || [];
-            recMap[word].push(rec.id);
-          } );
-        });
+        tokenize(rec.name);
+        rec.corporate_names.forEach(tokenize);
+        rec.fka_names.forEach(tokenize);
 
      } );
 
