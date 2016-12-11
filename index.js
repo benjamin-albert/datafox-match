@@ -48,6 +48,7 @@ function tokenizeCompanies(companies) {
     }
   }
 
+  // Discard ambiguous tokens.
   function removeAmbiguous() {
     var specificTokens = {};
     for (var token in tokenMap) {
@@ -62,6 +63,7 @@ function tokenizeCompanies(companies) {
     match(specificTokens);
   }
 
+  // Match a CSV entry to database records.
   function match(specificTokens) {
     var matches = {};
     companies.forEach( company => {
